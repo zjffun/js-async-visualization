@@ -1,0 +1,23 @@
+{
+  "name": "async-visualization",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zjffun/async-visualization.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zjffun/async-visualization/issues"
+  },
+  "homepage": "https://github.com/zjffun/async-visualization#readme",
+  "dependencies": {
+    "zone.js": "^0.11.3"
+  }
+}

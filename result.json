@@ -1,0 +1,12 @@
+{
+  "name": "root",
+  "children": [
+    {
+      "name": "setTimeout",
+      "runCount": 2,
+      "state": "running",
+      "fileline": "3:32",
+      "children": []
+    }
+  ]
+}
