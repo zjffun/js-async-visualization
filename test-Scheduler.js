@@ -17,10 +17,6 @@ class Scheduler {
       this.run.push(promise);
       return promise;
     } else {
-      debugger
-      Promise.resolve(0).then(() => {
-        
-      });
       return Promise.race(this.run).then((res) => {
         return this.scheduler();
       });
@@ -30,25 +26,22 @@ class Scheduler {
 
 const scheduler = new Scheduler();
 const timeout = (time) => {
-  return new Promise((r) => {
-    return setTimeout(r, time);
-  });
+  return new Promise((r) => setTimeout(r, time));
 };
 let i = 0;
 const addTask = (time, order) => {
   scheduler
     .add(() => {
-      debugger
       return timeout(time);
     })
     .then(() => console.log(order));
 };
 
-// addTask(1200, 5)
-// addTask(1400, 6)
-module.exports = function () {
+module.exports = () => {
   addTask(1000, 1);
   addTask(500, 2);
   addTask(300, 3);
   addTask(800, 4);
 };
+// addTask(1200, 5)
+// addTask(1400, 6)

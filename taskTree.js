@@ -1,9 +1,13 @@
+Error.stackTraceLimit = Infinity;
+
 const fs = require("fs");
-require("zone.js/dist/zone-node");
-// const scheduler = require("./Scheduler");
+require("./node_modules_self/zone-node");
+// require("zone.js/dist/zone-node");
+const scheduler = require("./test-Scheduler");
+// const scheduler = require("./test-Scheduler2");
 // const scheduler = require("./test-fn");
 // const scheduler = require("./test-function-return-promise");
-const scheduler = require("./test-promise-race");
+// const scheduler = require("./test-promise-race");
 
 class StoreTaskZoneSpec {
   constructor() {
@@ -18,7 +22,8 @@ class StoreTaskZoneSpec {
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
     var task = parentZoneDelegate.scheduleTask(targetZone, task);
-    task.data.fileline = this.getFileLine();
+    task.data.filteredStack = this.getFilteredStack(task.data.stack);
+    task.data.fileline = this.getFileLine(task.data.filteredStack);
     if (!Zone.currentTask) {
       this.rootTask.data.children.push(task);
       return task;
@@ -55,21 +60,28 @@ class StoreTaskZoneSpec {
     );
   }
 
-  getFileLine() {
-    const reg = /\\node_modules\\zone\.js|taskTree.js/;
-    console.log(
-      new Error().stack
-        .split("\n")
-        .slice(1)
-        .filter((s) => !reg.test(s))
-    );
-    debugger;
-    const fileline = new Error().stack
+  getFilteredStack(stack) {
+    const reg = /\\node_modules_self\\|\\node_modules\\zone\.js|taskTree.js/;
+    let resultStack = [];
+    if (stack) {
+      resultStack = stack;
+    } else {
+      resultStack = new Error().stack;
+    }
+    const filteredStack = resultStack
       .split("\n")
       .slice(1)
-      .find((s) => !reg.test(s));
-    if (fileline) {
-      return fileline.replace("at ", "").replace(/(.*?):(\d+:\d+)/, "$2");
+      .filter((s) => !reg.test(s));
+
+    debugger;
+    return filteredStack;
+  }
+
+  getFileLine(filteredStack) {
+    if (filteredStack) {
+      return filteredStack[0]
+        .replace("at ", "")
+        .replace(/(.*?):(\d+:\d+)/, "$2");
     } else {
       return "";
     }
@@ -81,6 +93,7 @@ class StoreTaskZoneSpec {
       runCount: task.runCount,
       state: task.state,
       fileline: task.data.fileline,
+      filteredStack: task.data.filteredStack,
       children: [],
     };
     if (task.data.children) {

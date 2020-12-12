@@ -88,7 +88,7 @@ treeJSON = d3.json("result.json", function (error, treeData) {
     });
   }
   // Sort the tree initially incase the JSON isn't in a sorted order.
-  sortTree();
+  // sortTree();
 
   // TODO: Pan function, can be better implemented.
 
@@ -434,7 +434,7 @@ treeJSON = d3.json("result.json", function (error, treeData) {
     var nodeEnter = node
       .enter()
       .append("g")
-      .call(dragListener)
+      // .call(dragListener)
       .attr("class", "node")
       .attr("transform", function (d) {
         return "translate(" + source.y0 + "," + source.x0 + ")";
@@ -493,6 +493,18 @@ treeJSON = d3.json("result.json", function (error, treeData) {
       })
       .on("click", function (d) {
         console.log(d);
+        document.querySelector(
+          ".info-container pre"
+        ).innerText = JSON.stringify(
+          d,
+          (k, v) => {
+            if (k === "parent" || k === "children") {
+              return undefined;
+            }
+            return v;
+          },
+          2
+        );
       });
 
     // Change the circle fill depending on whether it has children and is collapsed
