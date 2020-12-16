@@ -3,10 +3,10 @@ Error.stackTraceLimit = Infinity;
 const fs = require("fs");
 require("./node_modules_self/zone-node");
 // require("zone.js/dist/zone-node");
-const scheduler = require("./test-Scheduler");
+// const scheduler = require("./test-Scheduler");
 // const scheduler = require("./test-Scheduler2");
 // const scheduler = require("./test-fn");
-// const scheduler = require("./test-function-return-promise");
+const scheduler = require("./test-function-return-promise");
 // const scheduler = require("./test-promise-race");
 
 class StoreTaskZoneSpec {
@@ -15,27 +15,40 @@ class StoreTaskZoneSpec {
     this.rootTask = {
       source: "root",
       data: {
+        ttid: 0,
         children: [],
       },
     };
+    this.ttid = 1;
+    this.timetravel = [];
   }
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
     var task = parentZoneDelegate.scheduleTask(targetZone, task);
     task.data.filteredStack = this.getFilteredStack(task.data.stack);
     task.data.fileline = this.getFileLine(task.data.filteredStack);
+    task.data.ttid = this.ttid++;
     if (!Zone.currentTask) {
       this.rootTask.data.children.push(task);
-      return task;
+    } else {
+      if (!Zone.currentTask.data.children) {
+        Zone.currentTask.data.children = [];
+      }
+      Zone.currentTask.data.children.push(task);
     }
-    if (!Zone.currentTask.data.children) {
-      Zone.currentTask.data.children = [];
-    }
-    Zone.currentTask.data.children.push(task);
+
+    this.timetravel.push({
+      ttid: task.data.ttid,
+      type: "schedule",
+    });
 
     fs.writeFileSync(
       "result.json",
       JSON.stringify(lst.getTaskTree(lst.rootTask), null, 2)
+    );
+    fs.writeFileSync(
+      "timetravel.json",
+      JSON.stringify(this.timetravel, null, 2)
     );
     return task;
   }
@@ -48,9 +61,17 @@ class StoreTaskZoneSpec {
     applyThis,
     applyArgs
   ) {
+    this.timetravel.push({
+      ttid: task.data.ttid,
+      type: "invoke",
+    });
     fs.writeFileSync(
       "result.json",
       JSON.stringify(lst.getTaskTree(lst.rootTask), null, 2)
+    );
+    fs.writeFileSync(
+      "timetravel.json",
+      JSON.stringify(this.timetravel, null, 2)
     );
     return parentZoneDelegate.invokeTask(
       targetZone,
@@ -94,6 +115,7 @@ class StoreTaskZoneSpec {
       state: task.state,
       fileline: task.data.fileline,
       filteredStack: task.data.filteredStack,
+      ttid: task.data.ttid,
       children: [],
     };
     if (task.data.children) {
