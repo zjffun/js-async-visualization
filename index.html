@@ -41,17 +41,21 @@
         display: none;
     }
 </style>
-<script src="https://unpkg.com/jquery@3.3.1/dist/jquery.min.js"></script>
-<script src="https://d3js.org/d3.v3.min.js"></script>
-<script src="./dndTree.js"></script>
 <!-- <script type="module">
     import "./dndTree.js";
 </script> -->
 
 <body>
+    <div class="timetravel">
+        <button onclick="prevState()">上一状态</button>
+        <button onclick="nextState()">下一状态</button>
+        <input type="range" class="state-range" min="-1" max="-1" onchange="changeState(event)">
+        <span class="curState">-1</span>/<span class="totalState"></span>
+    </div>
     <div id="tree-container"></div>
     <style>
         .info-container {
+            display: none;
             position: fixed;
             right: 0;
             top: 0;
@@ -64,13 +68,17 @@
             overflow: auto;
         }
     </style>
-    <div class="timetravel">
-        <button onclick="prevStatus()">上一状态</button>
-        <button onclick="nextStatus()">上一状态</button>
-    </div>
     <div class="info-container">
         <pre></pre>
     </div>
 </body>
+<script src="https://unpkg.com/jquery@3.3.1/dist/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="./dndTree.js"></script>
+<script src="./index.js"></script>
+<script>
+
+
+</script>
 
 </html>

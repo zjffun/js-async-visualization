@@ -25,10 +25,34 @@ OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.*/
 
+const steps = {
+  schedule: "schedule",
+  invoke: "invoke",
+};
+
+const stepColor = {
+  [steps.schedule]: "yellow",
+  [steps.invoke]: "green",
+};
+
+function lastEle(arr) {
+  if (!Array.isArray(arr)) {
+    return undefined;
+  }
+  return arr[arr.length - 1];
+}
+
 // Get timetravel data
 d3.json("timetravel.json", function (error, timeTravelData) {
+  window.timeTravelData = timeTravelData;
+  document.querySelector(".totalState").innerHTML = timeTravelData.length;
+  document
+    .querySelector(".state-range")
+    .setAttribute("max", timeTravelData.length);
   // Get JSON data
   d3.json("result.json", function (error, treeData) {
+    var treeDataPlane = [];
+
     // Calculate total nodes, max label length
     var totalNodes = 0;
     var maxLabelLength = 0;
@@ -67,6 +91,8 @@ d3.json("timetravel.json", function (error, timeTravelData) {
     visit(
       treeData,
       function (d) {
+        d.step = [];
+        treeDataPlane.push(d);
         totalNodes++;
         maxLabelLength = Math.max(d.name.length, maxLabelLength);
       },
@@ -74,6 +100,11 @@ d3.json("timetravel.json", function (error, timeTravelData) {
         return d.children && d.children.length > 0 ? d.children : null;
       }
     );
+
+    // TODO optimize
+    timeTravelData.forEach((ttd) => {
+      ttd.node = treeDataPlane.find((d) => d.ttid === ttd.ttid);
+    });
 
     // Define the zoom function for the zoomable tree
 
@@ -159,7 +190,6 @@ d3.json("timetravel.json", function (error, timeTravelData) {
     };
 
     // Function to center node when clicked/dropped so node doesn't get lost when collapsing/moving with large amount of children.
-
     function centerNode(source) {
       scale = zoomListener.scale();
       x = -source.y0;
@@ -178,7 +208,6 @@ d3.json("timetravel.json", function (error, timeTravelData) {
     }
 
     // Toggle children function
-
     function toggleChildren(d) {
       if (d.children) {
         d._children = d.children;
@@ -219,7 +248,10 @@ d3.json("timetravel.json", function (error, timeTravelData) {
       tree = tree.size([newHeight, viewerWidth]);
 
       // Compute the new tree layout.
-      var nodes = tree.nodes(root).reverse(),
+      var nodes = tree
+          .nodes(root)
+          .reverse()
+          .filter((n) => n.step.length > 0),
         links = tree.links(nodes);
 
       // Set widths between levels based on maxLabelLength.
@@ -251,7 +283,7 @@ d3.json("timetravel.json", function (error, timeTravelData) {
         .attr("class", "nodeCircle")
         .attr("r", 0)
         .style("fill", function (d) {
-          return d._children ? "lightsteelblue" : "#fff";
+          return stepColor[lastEle(d.step)];
         });
 
       nodeEnter
@@ -269,21 +301,6 @@ d3.json("timetravel.json", function (error, timeTravelData) {
         })
         .style("fill-opacity", 0);
 
-      // phantom node to give us mouseover in a radius around it
-      nodeEnter
-        .append("circle")
-        .attr("class", "ghostCircle")
-        .attr("r", 30)
-        .attr("opacity", 0.2) // change this to zero to hide the target area
-        .style("fill", "red")
-        .attr("pointer-events", "mouseover")
-        .on("mouseover", function (node) {
-          overCircle(node);
-        })
-        .on("mouseout", function (node) {
-          outCircle(node);
-        });
-
       // Update the text to reflect whether node has children or not.
       node
         .select("text")
@@ -297,7 +314,8 @@ d3.json("timetravel.json", function (error, timeTravelData) {
           return [d.name, d.runCount, d.fileline].join("\n");
         })
         .on("click", function (d) {
-          console.log(d);
+          d3.event.stopPropagation();
+          showInfoContianer();
           document.querySelector(
             ".info-container pre"
           ).innerText = JSON.stringify(
@@ -317,7 +335,7 @@ d3.json("timetravel.json", function (error, timeTravelData) {
         .select("circle.nodeCircle")
         .attr("r", 4.5)
         .style("fill", function (d) {
-          return d._children ? "lightsteelblue" : "#fff";
+          return stepColor[lastEle(d.step)];
         });
 
       // Transition nodes to their new position.
@@ -400,9 +418,14 @@ d3.json("timetravel.json", function (error, timeTravelData) {
     root = treeData;
     root.x0 = viewerHeight / 2;
     root.y0 = 0;
+    root.step.push(steps.invoke);
 
     // Layout the tree initially and center on the root node.
     update(root);
     centerNode(root);
+
+    window.updateTree = function () {
+      update(root);
+    };
   });
 });

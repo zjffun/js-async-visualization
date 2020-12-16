@@ -3,10 +3,10 @@ Error.stackTraceLimit = Infinity;
 const fs = require("fs");
 require("./node_modules_self/zone-node");
 // require("zone.js/dist/zone-node");
-// const scheduler = require("./test-Scheduler");
+const scheduler = require("./test-Scheduler");
 // const scheduler = require("./test-Scheduler2");
 // const scheduler = require("./test-fn");
-const scheduler = require("./test-function-return-promise");
+// const scheduler = require("./test-function-return-promise");
 // const scheduler = require("./test-promise-race");
 
 class StoreTaskZoneSpec {
