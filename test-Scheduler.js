@@ -43,5 +43,6 @@ module.exports = () => {
   addTask(300, 3);
   addTask(800, 4);
 };
+
 // addTask(1200, 5)
 // addTask(1400, 6)

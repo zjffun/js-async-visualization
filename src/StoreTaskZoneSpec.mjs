@@ -1,16 +1,5 @@
-Error.stackTraceLimit = Infinity;
-
-const fs = require("fs");
-require("./node_modules_self/zone-node");
-// require("zone.js/dist/zone-node");
-const scheduler = require("./test-Scheduler");
-// const scheduler = require("./test-Scheduler2");
-// const scheduler = require("./test-fn");
-// const scheduler = require("./test-function-return-promise");
-// const scheduler = require("./test-promise-race");
-
-class StoreTaskZoneSpec {
-  constructor() {
+export default class StoreTaskZoneSpec {
+  constructor({ onScheduleTask, onInvokeTask }) {
     this.name = "StoreTaskZoneSpec";
     this.rootTask = {
       source: "root",
@@ -21,6 +10,8 @@ class StoreTaskZoneSpec {
     };
     this.ttid = 1;
     this.timetravel = [];
+    this._onScheduleTask = onScheduleTask;
+    this._onInvokeTask = onInvokeTask;
   }
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
@@ -37,20 +28,7 @@ class StoreTaskZoneSpec {
       Zone.currentTask.data.children.push(task);
     }
 
-    this.timetravel.push({
-      ttid: task.data.ttid,
-      type: "schedule",
-    });
-
-    fs.writeFileSync(
-      "result.json",
-      JSON.stringify(lst.getTaskTree(lst.rootTask), null, 2)
-    );
-    fs.writeFileSync(
-      "timetravel.json",
-      JSON.stringify(this.timetravel, null, 2)
-    );
-    return task;
+    this._onScheduleTask(task);
   }
 
   onInvokeTask(
@@ -61,24 +39,13 @@ class StoreTaskZoneSpec {
     applyThis,
     applyArgs
   ) {
-    this.timetravel.push({
-      ttid: task.data.ttid,
-      type: "invoke",
-    });
-    fs.writeFileSync(
-      "result.json",
-      JSON.stringify(lst.getTaskTree(lst.rootTask), null, 2)
-    );
-    fs.writeFileSync(
-      "timetravel.json",
-      JSON.stringify(this.timetravel, null, 2)
-    );
-    return parentZoneDelegate.invokeTask(
+    parentZoneDelegate.invokeTask(
       targetZone,
       task,
       applyThis,
       applyArgs
     );
+    this._onInvokeTask(task);
   }
 
   getFilteredStack(stack) {
@@ -94,7 +61,6 @@ class StoreTaskZoneSpec {
       .slice(1)
       .filter((s) => !reg.test(s));
 
-    debugger;
     return filteredStack;
   }
 
@@ -126,15 +92,3 @@ class StoreTaskZoneSpec {
     return result;
   }
 }
-
-let lst;
-
-function test(fn) {
-  return function (done) {
-    Zone.current.fork((lst = new StoreTaskZoneSpec(done))).run(fn);
-  };
-}
-
-test(scheduler)(() => {
-  console.log("done");
-});
