@@ -13,4 +13,10 @@ h1 {
 .gutter {
   background: gray;
   border-radius: 4px;
+  &-horizontal {
+    cursor: col-resize;
+  }
+  &-vertical {
+    cursor: row-resize;
+  }
 }

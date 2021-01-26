@@ -1,8 +1,27 @@
 <h1>JS asynchronous visualization</h1>
 <div class="container">
-  <section #code class="code"></section>
+  <div #codeWrapper class="code-wrapper">
+    <button (click)="runCode()" class="code-run">run</button>
+    <section #code class="code"></section>
+  </div>
   <section #result class="result">
-    <section #tree class="tree"></section>
-    <section #detail class="detail"></section>
+    <section #tree class="tree">
+      <div class="timetravel">
+        <button (click)="handleUpdateClick()">update</button>
+        <button (click)="prevState()">prev state</button>
+        <button (click)="nextState()">next state</button>
+        <input type="range" class="state-range" min="-1" [max]="totalState" [value]="currentState"
+          (change)="handleChangeState($event)">
+        <span class="current-state">{{currentState}}</span>
+        /
+        <span class="total-state">{{totalState}}</span>
+      </div>
+      <div id="tree-container"></div>
+    </section>
+    <section #detail class="detail">
+      <div class="info-container">
+        <pre></pre>
+      </div>
+    </section>
   </section>
 </div>
