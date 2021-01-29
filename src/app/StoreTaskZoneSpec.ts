@@ -25,12 +25,8 @@ export default class StoreTaskZoneSpec {
     task.data.filteredStack = this.getFilteredStack(task.data.stack);
     task.data.fileline = this.getFileLine(task.data.filteredStack);
     task.data.timeTravelId = this.timeTravelId++;
-    if (
-      !Zone.currentTask ||
-      Zone.currentTask.source === 'HTMLButtonElement.addEventListener:click'
-      //  ||
-      // Zone.currentTask.source === 'Promise.then'
-    ) {
+    task.data.inSchedule = true;
+    if (!Zone.currentTask || !Zone.currentTask.data.inSchedule) {
       this.rootTask.data.children.push(task);
     } else {
       if (!Zone.currentTask.data.children) {

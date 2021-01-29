@@ -150,13 +150,13 @@ export class AppComponent {
       minSize: 0,
       elementStyle: function (dimension, size, gutterSize) {
         return {
-          'flex-basis': 'calc(' + size + '% - ' + gutterSize + 'px)',
-          width: 'calc(' + size + '% - ' + gutterSize + 'px)',
+          flex: `0 0 auto`,
+          width: `calc(${size}% - ${gutterSize}px)`,
         };
       },
       gutterStyle: function (dimension, gutterSize) {
         return {
-          'flex-basis': gutterSize + 'px',
+          flex: `0 0 ${gutterSize}px`,
         };
       },
     });
@@ -168,13 +168,13 @@ export class AppComponent {
       direction: 'vertical',
       elementStyle: function (dimension, size, gutterSize) {
         return {
-          'flex-basis': 'calc(' + size + '% - ' + gutterSize + 'px)',
-          height: 'calc(' + size + '% - ' + gutterSize + 'px)',
+          flex: `0 0 auto`,
+          height: `calc(${size}% - ${gutterSize}px)`,
         };
       },
       gutterStyle: function (dimension, gutterSize) {
         return {
-          'flex-basis': gutterSize + 'px',
+          flex: `0 0 ${gutterSize}px`,
         };
       },
     });
