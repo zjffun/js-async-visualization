@@ -6,8 +6,7 @@ import 'codemirror/addon/runmode/colorize.js';
 import 'codemirror/addon/display/panel.js';
 import StoreTaskZoneSpec from './StoreTaskZoneSpec';
 import { init, update } from './d3Tree';
-import { stepEnum } from './enum';
-import { TaskTree, TimeTravelData } from '.';
+import { TimeTravel } from '.';
 
 function visit(parent, visitFn, childrenFn) {
   if (!parent) return;
@@ -36,8 +35,7 @@ export class AppComponent {
   @ViewChild('detail') detail: ElementRef;
 
   private codeMirror: CodeMirror.Editor;
-  private ttd: TimeTravelData;
-  private timeTravelData: Array<TimeTravelData> = [];
+  private timeTravelArray: Array<TimeTravel> = [];
   private taskTree;
 
   currentState = -1;
@@ -45,7 +43,7 @@ export class AppComponent {
   totalState = -1;
 
   runCode() {
-    this.timeTravelData = [];
+    this.timeTravelArray = [];
 
     const that = this;
     const code = this.codeMirror.getValue();
@@ -54,20 +52,11 @@ export class AppComponent {
       Zone.current
         .fork(
           new StoreTaskZoneSpec({
-            onScheduleTask(task) {
-              that.timeTravelData.push({
-                id: task.data.timeTravelId,
-                state: stepEnum.schedule,
-              });
-
+            onScheduleTask() {
               that.taskTree = this.getTaskTree(this.rootTask);
+              that.timeTravelArray = this.getTimeTravelArray();
             },
-            onInvokeTask(task) {
-              that.timeTravelData.push({
-                id: task.data.timeTravelId,
-                state: stepEnum.invoke,
-              });
-            },
+            onInvokeTask() {},
           })
         )
         .run(func);
@@ -78,24 +67,20 @@ export class AppComponent {
   }
 
   handleUpdateClick() {
-    const treeDataPlane: Array<TaskTree> = [];
     visit(
       this.taskTree,
-      function (d) {
-        d.states = [];
-        treeDataPlane.push(d);
+      (d) => {
+        d.timeTravel = [];
       },
-      function (d) {
-        return d.children && d.children.length > 0 ? d.children : null;
-      }
+      (d) => d.children
     );
 
     // TODO optimize
-    this.timeTravelData.forEach((ttd) => {
-      ttd.node = treeDataPlane.find((d) => d.timeTravelId === ttd.id);
+    this.timeTravelArray.forEach((ttd) => {
+      ttd.node = ttd.task.data.node;
     });
 
-    this.totalState = this.timeTravelData.length - 1;
+    this.totalState = this.timeTravelArray.length - 1;
 
     this.tree.nativeElement.querySelector('#tree-container').innerHTML = '';
     init(
@@ -127,19 +112,19 @@ export class AppComponent {
     if (this.currentState < 0) {
       return;
     }
-    const ttd = this.timeTravelData[this.currentState];
+    const ttd = this.timeTravelArray[this.currentState];
     this.currentState--;
-    ttd.node.states.pop();
+    ttd.node.timeTravel.pop();
     this.updateTree();
   }
 
   nextState() {
-    if (this.currentState >= this.timeTravelData.length - 1) {
+    if (this.currentState >= this.timeTravelArray.length - 1) {
       return;
     }
     this.currentState++;
-    const ttd = this.timeTravelData[this.currentState];
-    ttd.node.states.push(ttd.state);
+    const ttd = this.timeTravelArray[this.currentState];
+    ttd.node.timeTravel.push(ttd);
     this.updateTree();
   }
 

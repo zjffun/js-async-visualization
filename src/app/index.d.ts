@@ -1,17 +1,18 @@
-import { stepEnum } from './enum';
+import { StepEnum } from './enum';
+import { TaskNode as StoreTaskNode } from './StoreTaskZoneSpec';
 
-export interface TaskTree {
+export interface TaskNode extends StoreTaskNode {
   id: string;
-  runCound: number;
-  states: Array<stepEnum>;
-  fileline: string;
-  filteredStack: Array<string>;
-  timeTravelId: number;
-  children: Array<TaskTree>;
+  runCount: number;
+  timeTravel: TimeTravel[];
+  fileline?: string;
+  children: TaskNode[];
 }
 
-export interface TimeTravelData {
-  id: number;
-  state: stepEnum;
-  node?: TaskTree;
+export interface TimeTravel {
+  state: StepEnum;
+  task?: any;
+  stack?: string[];
+  runCount?: number;
+  node?: TaskNode;
 }

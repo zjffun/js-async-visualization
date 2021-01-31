@@ -1,11 +1,11 @@
 import { tree, linkVertical, select, hierarchy, zoom } from 'd3';
-import { stepEnum } from './enum';
-import { TaskTree } from '.';
+import { StepEnum } from './enum';
+import { TaskNode } from './index.d';
 
 const stepColorMap = {
-  [stepEnum.scheduling]: 'yellow',
-  [stepEnum.schedule]: 'yellow',
-  [stepEnum.invoke]: 'green',
+  [StepEnum.scheduling]: 'yellow',
+  [StepEnum.schedule]: 'yellow',
+  [StepEnum.invoke]: 'green',
 };
 
 function lastElement(arr) {
@@ -15,7 +15,11 @@ function lastElement(arr) {
   return arr[arr.length - 1];
 }
 
-let root;
+function getFillColor(d) {
+  return stepColorMap[lastElement(d.data.timeTravel).state];
+}
+
+let root: TaskNode;
 let viewerWidth;
 let viewerHeight;
 let treeObj;
@@ -40,13 +44,15 @@ let top;
 let bottom;
 // A recursive helper function for performing some setup by walking through all nodes
 
-export function init(taskData: TaskTree, dom: HTMLElement) {
+export function init(taskData: TaskNode, dom: HTMLElement) {
   viewerWidth = dom.clientWidth;
   viewerHeight = dom.clientHeight;
 
   // Define the root
   root = taskData;
-  root.states.push(stepEnum.invoke);
+  root.timeTravel.push({
+    state: StepEnum.invoke,
+  });
 
   // tree
   treeObj = treeFn(hierarchy(root));
@@ -83,8 +89,10 @@ export function init(taskData: TaskTree, dom: HTMLElement) {
 
 export function update() {
   // Compute the new tree layout.
-  var nodes = treeObj.descendants().filter((n) => n.data.states.length > 0);
-  var links = treeObj.links().filter((n) => n.target.data.states.length > 0);
+  var nodes = treeObj.descendants().filter((n) => n.data.timeTravel.length > 0);
+  var links = treeObj
+    .links()
+    .filter((n) => n.target.data.timeTravel.length > 0);
 
   left = root;
   right = root;
@@ -116,10 +124,7 @@ export function update() {
               .append('circle')
               .attr('class', 'nodeCircle')
               .attr('r', 4.5)
-              .style('fill', function (d) {
-                console.log(d);
-                return stepColorMap[lastElement(d.data.states)];
-              })
+              .style('fill', getFillColor)
           )
           .call((enter) =>
             enter
@@ -133,9 +138,7 @@ export function update() {
                 return d.children || d._children ? 'end' : 'start';
               })
               .text(function (d) {
-                return [d.data.name, d.data.runCount, d.data.fileline].join(
-                  '\n'
-                );
+                return [d.data.name].join('\n');
               })
               .style('fill-opacity', 1)
               .on('click', function (e, d) {
@@ -145,7 +148,7 @@ export function update() {
                 ) as HTMLElement).innerText = JSON.stringify(
                   d,
                   (k, v) => {
-                    if (k === 'parent' || k === 'children') {
+                    if (['parent', 'children', 'task', 'node'].includes(k)) {
                       return undefined;
                     }
                     return v;
@@ -169,9 +172,7 @@ export function update() {
             update
               .select('circle.nodeCircle')
               .attr('r', 4.5)
-              .style('fill', function (d) {
-                return stepColorMap[lastElement(d.data.states)];
-              })
+              .style('fill', getFillColor)
           ),
       (exit) => {
         exit

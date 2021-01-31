@@ -1,6 +1,11 @@
-import { TaskTree } from '.';
-import { stepEnum } from './enum';
+import { StepEnum } from './enum';
 
+export interface TaskNode {
+  id: string;
+  name: string;
+  task;
+  children: Array<TaskNode>;
+}
 export default class StoreTaskZoneSpec {
   name = 'StoreTaskZoneSpec';
   rootTask = {
@@ -10,10 +15,10 @@ export default class StoreTaskZoneSpec {
       children: [],
     },
   };
-  timeTravelId = 1;
-  timetravel = [];
+  id = 1;
   private _onScheduleTask;
   private _onInvokeTask;
+  private _timeTravelArray = [];
 
   constructor({ onScheduleTask, onInvokeTask }) {
     this._onScheduleTask = onScheduleTask;
@@ -22,11 +27,9 @@ export default class StoreTaskZoneSpec {
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
     var task = parentZoneDelegate.scheduleTask(targetZone, task);
-    task.data.filteredStack = this.getFilteredStack(task.data.stack);
-    task.data.fileline = this.getFileLine(task.data.filteredStack);
-    task.data.timeTravelId = this.timeTravelId++;
-    task.data.inSchedule = true;
-    if (!Zone.currentTask || !Zone.currentTask.data.inSchedule) {
+    task.data.id = this.id++;
+    task.data._inSchedule = true;
+    if (!Zone.currentTask || !Zone.currentTask.data._inSchedule) {
       this.rootTask.data.children.push(task);
     } else {
       if (!Zone.currentTask.data.children) {
@@ -34,6 +37,12 @@ export default class StoreTaskZoneSpec {
       }
       Zone.currentTask.data.children.push(task);
     }
+
+    this._timeTravelArray.push({
+      task: task,
+      stack: this.getFilteredStack(),
+      state: StepEnum.schedule,
+    });
 
     this._onScheduleTask(task);
   }
@@ -47,53 +56,49 @@ export default class StoreTaskZoneSpec {
     applyArgs
   ) {
     parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
+
+    this._timeTravelArray.push({
+      task: task,
+      stack: this.getFilteredStack(),
+      runCount: task.runCount,
+      state: StepEnum.invoke,
+    });
+
     this._onInvokeTask(task);
   }
 
-  getFilteredStack(stack) {
-    const reg = /\\node_modules_self\\|\\node_modules\\zone\.js|taskTree.js/;
-    let resultStack;
-    if (stack) {
-      resultStack = stack;
-    } else {
-      resultStack = new Error().stack;
-    }
+  getFilteredStack() {
+    // Chrome
+    const whiteReg = /at eval \(eval at .*?, <anonymous>:\d+:\d+\)/;
+    const resultStack = new Error().stack;
     const filteredStack = resultStack
       .split('\n')
       .slice(1)
-      .filter((s) => !reg.test(s));
+      .filter((s) => whiteReg.test(s));
 
     return filteredStack;
   }
 
-  getFileLine(filteredStack) {
-    if (filteredStack) {
-      return filteredStack[0]
-        .replace('at ', '')
-        .replace(/(.*?):(\d+:\d+)/, '$2');
-    } else {
-      return '';
-    }
-  }
-
   getTaskTree(task) {
     const result = {
-      id: '',
-      runCound: -1,
-      states: [],
+      id: task.data.id,
       name: task.source,
-      runCount: task.runCount,
-      state: task.state,
-      fileline: task.data.fileline,
-      filteredStack: task.data.filteredStack,
-      timeTravelId: task.data.timeTravelId,
+      task,
       children: [],
-    } as TaskTree;
+    } as TaskNode;
+
+    task.data.node = result;
+
     if (task.data.children) {
       for (const t of task.data.children) {
         result.children.push(this.getTaskTree(t));
       }
     }
+
     return result;
+  }
+
+  getTimeTravelArray() {
+    return this._timeTravelArray;
   }
 }
