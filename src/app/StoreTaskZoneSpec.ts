@@ -55,8 +55,6 @@ export default class StoreTaskZoneSpec {
     applyThis,
     applyArgs
   ) {
-    parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
-
     this._timeTravelArray.push({
       task: task,
       stack: this.getFilteredStack(),
@@ -65,6 +63,8 @@ export default class StoreTaskZoneSpec {
     });
 
     this._onInvokeTask(task);
+
+    parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
   }
 
   getFilteredStack() {

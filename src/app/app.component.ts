@@ -4,6 +4,7 @@ import CodeMirror from 'codemirror';
 import 'codemirror/mode/javascript/javascript.js';
 import 'codemirror/addon/runmode/colorize.js';
 import 'codemirror/addon/display/panel.js';
+import 'codemirror/addon/selection/mark-selection.js';
 import StoreTaskZoneSpec from './StoreTaskZoneSpec';
 import { init, update } from './d3Tree';
 import { TimeTravel } from '.';
@@ -22,6 +23,15 @@ function visit(parent, visitFn, childrenFn) {
   }
 }
 
+function getLoc(str: string) {
+  const locReg = /<anonymous>:(\d+):(\d+)/;
+  const res = str.match(locReg);
+  return {
+    line: +res[1] - 3,
+    ch: +res[2] - 1,
+  };
+}
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -37,6 +47,7 @@ export class AppComponent {
   private codeMirror: CodeMirror.Editor;
   private timeTravelArray: Array<TimeTravel> = [];
   private taskTree;
+  private locMark;
 
   currentState = -1;
 
@@ -85,7 +96,8 @@ export class AppComponent {
     this.tree.nativeElement.querySelector('#tree-container').innerHTML = '';
     init(
       this.taskTree,
-      this.tree.nativeElement.querySelector('#tree-container')
+      this.tree.nativeElement.querySelector('#tree-container'),
+      this.handleNodeClick.bind(this)
     );
     this.updateTree();
   }
@@ -105,6 +117,32 @@ export class AppComponent {
       while (this.currentState < targetState) {
         this.nextState();
       }
+    }
+  }
+
+  handleNodeClick(data) {
+    (document.querySelector(
+      '.info-container pre'
+    ) as HTMLElement).innerText = JSON.stringify(
+      data,
+      (k, v) => {
+        if (['parent', 'children', 'task', 'node'].includes(k)) {
+          return undefined;
+        }
+        return v;
+      },
+      2
+    );
+    const stackFrame =
+      data.data.timeTravel[data.data.timeTravel.length - 1]?.stack?.[0];
+    if (stackFrame) {
+      const { line, ch } = getLoc(stackFrame);
+      this.locMark?.clear();
+      this.locMark = this.codeMirror.markText(
+        { line, ch },
+        { line, ch: ch + 1 },
+        { className: 'CodeMirror-CurrentLoc' }
+      );
     }
   }
 

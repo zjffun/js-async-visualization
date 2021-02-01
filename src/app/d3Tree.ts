@@ -33,8 +33,6 @@ const diagonal = linkVertical<any, any>()
   .x((d) => d.y)
   .y((d) => d.x);
 
-// define the baseSvg, attaching a class for styling and the zoomListener
-// dom.innerHTML = '';
 let baseSvg;
 let svgGroup;
 
@@ -42,9 +40,11 @@ let left;
 let right;
 let top;
 let bottom;
-// A recursive helper function for performing some setup by walking through all nodes
 
-export function init(taskData: TaskNode, dom: HTMLElement) {
+let nodeClickHandler;
+
+export function init(taskData: TaskNode, dom: HTMLElement, onNodeClick) {
+  nodeClickHandler = onNodeClick;
   viewerWidth = dom.clientWidth;
   viewerHeight = dom.clientHeight;
 
@@ -78,6 +78,8 @@ export function init(taskData: TaskNode, dom: HTMLElement) {
     .attr('viewBox', [-10, -10, viewerWidth - 20, viewerHeight - 20].toString())
     .attr('width', viewerWidth)
     .attr('height', viewerHeight)
+    .style('width', viewerWidth)
+    .style('height', viewerHeight)
     .call(zoomListener);
 
   let gWrapper = baseSvg
@@ -143,18 +145,7 @@ export function update() {
               .style('fill-opacity', 1)
               .on('click', function (e, d) {
                 e.stopPropagation();
-                (document.querySelector(
-                  '.info-container pre'
-                ) as HTMLElement).innerText = JSON.stringify(
-                  d,
-                  (k, v) => {
-                    if (['parent', 'children', 'task', 'node'].includes(k)) {
-                      return undefined;
-                    }
-                    return v;
-                  },
-                  2
-                );
+                nodeClickHandler(d);
               })
           )
           .call((enter) =>
