@@ -39,6 +39,12 @@ h1 {
         }
         &-CurrentLoc {
           background: aqua;
+          animation: blink 2s step-end infinite;
+          @keyframes blink {
+            50% {
+              background: transparent;
+            }
+          }
         }
       }
     }

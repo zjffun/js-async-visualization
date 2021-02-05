@@ -68,6 +68,7 @@ export class AppComponent {
               that.timeTravelArray = this.getTimeTravelArray();
             },
             onInvokeTask() {},
+            onCancelTask() {},
           })
         )
         .run(func);
@@ -133,8 +134,11 @@ export class AppComponent {
       },
       2
     );
-    const stackFrame =
-      data.data.timeTravel[data.data.timeTravel.length - 1]?.stack?.[0];
+    this.setLocMark(data.data.timeTravel[data.data.timeTravel.length - 1]);
+  }
+
+  setLocMark(timeTravelData?: TimeTravel) {
+    const stackFrame = timeTravelData?.stack?.[0];
     if (stackFrame) {
       const { line, ch } = getLoc(stackFrame);
       this.locMark?.clear();
@@ -154,6 +158,10 @@ export class AppComponent {
     this.currentState--;
     ttd.node.timeTravel.pop();
     this.updateTree();
+    this.handleNodeClick({
+      data: ttd.node,
+    });
+    this.setLocMark(this.timeTravelArray[this.currentState]);
   }
 
   nextState() {
@@ -164,6 +172,10 @@ export class AppComponent {
     const ttd = this.timeTravelArray[this.currentState];
     ttd.node.timeTravel.push(ttd);
     this.updateTree();
+    this.handleNodeClick({
+      data: ttd.node,
+    });
+    this.setLocMark(ttd);
   }
 
   ngAfterViewInit() {
@@ -206,14 +218,72 @@ export class AppComponent {
     CodeMirrorStatusBar.classList.add('CodeMirror-StatusBar');
     CodeMirrorStatusBar.innerText = 'Ln -1, Col -1';
 
+    let code;
+    code = `// var a = Promise.race([Promise.resolve(123)]);
+var b = new Promise((res) => setTimeout(() => {
+  res();
+}, 1000));
+b.then(() => {});
+// a.then(() => {
+//   console.log(123);
+// });
+`;
+
+    // code = `
+    // class Scheduler {
+    //   constructor() {
+    //     this.count = 2;
+    //     this.queue = [];
+    //     this.run = [];
+    //   }
+    //   add(task) {
+    //     this.queue.push(task);
+    //     return this.scheduler();
+    //   }
+    //   scheduler() {
+    //     if (this.run.length < this.count && this.queue.length) {
+    //       const task = this.queue.shift();
+    //       const promise = task().then(() => {
+    //         this.run.splice(this.run.indexOf(promise), 1);
+    //       });
+    //       this.run.push(promise);
+    //       return promise;
+    //     } else {
+    //       return Promise.race(this.run).then((res) => {
+    //         return this.scheduler();
+    //       });
+    //     }
+    //   }
+    // }
+
+    // const scheduler = new Scheduler();
+    // const timeout = (time) => {
+    //   return new Promise((r) => setTimeout(r, time));
+    // };
+    // let i = 0;
+    // const addTask = (time, order) => {
+    //   scheduler
+    //     .add(() => {
+    //       return timeout(time);
+    //     })
+    //     .then(() => console.log(order));
+    // };
+
+    // // run
+    // addTask(1000, 1);
+    // addTask(500, 2);
+    // addTask(300, 3);
+    // addTask(800, 4);`;
+
+    //     code = `function myScript(){return 100;}
+
+    // setTimeout(()=>{setTimeout(()=>{setTimeout(()=>{}, 100)}, 100)}, 100)
+    // setTimeout(()=>{setTimeout(()=>{setTimeout(()=>{}, 100)}, 100)}, 100)
+    // console.log(11)
+    // throw Error(10)`;
+
     this.codeMirror = CodeMirror(this.code.nativeElement, {
-      value: `function myScript(){return 100;}
-
-
-setTimeout(()=>{setTimeout(()=>{setTimeout(()=>{}, 100)}, 100)}, 100)
-setTimeout(()=>{setTimeout(()=>{setTimeout(()=>{}, 100)}, 100)}, 100)
-console.log(11)
-throw Error(10)`,
+      value: code,
       lineNumbers: true,
       mode: 'javascript',
       theme: 'solarized dark',
@@ -233,6 +303,6 @@ throw Error(10)`,
     this.runCode();
     setTimeout(() => {
       this.handleUpdateClick();
-    }, 500);
+    }, 3000);
   }
 }

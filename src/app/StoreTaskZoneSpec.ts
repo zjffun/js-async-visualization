@@ -18,29 +18,50 @@ export default class StoreTaskZoneSpec {
   id = 1;
   private _onScheduleTask;
   private _onInvokeTask;
+  private _onCancelTask;
   private _timeTravelArray = [];
 
-  constructor({ onScheduleTask, onInvokeTask }) {
+  constructor({ onScheduleTask, onInvokeTask, onCancelTask }) {
     this._onScheduleTask = onScheduleTask;
     this._onInvokeTask = onInvokeTask;
+    this._onCancelTask = onCancelTask;
+  }
+
+  onIntercept(parentZoneDelegate, currentZone, targetZone, delegate, source) {
+    console.log(parentZoneDelegate);
+    debugger;
   }
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
     var task = parentZoneDelegate.scheduleTask(targetZone, task);
     task.data.id = this.id++;
     task.data._inSchedule = true;
+    task.data.LongStackTraceStack = new Error('LongStackTrace').stack;
+
     if (!Zone.currentTask || !Zone.currentTask.data._inSchedule) {
+      task.data.parent = this.rootTask;
       this.rootTask.data.children.push(task);
     } else {
       if (!Zone.currentTask.data.children) {
         Zone.currentTask.data.children = [];
       }
+      task.data.parent = Zone.currentTask;
       Zone.currentTask.data.children.push(task);
     }
 
+    if (task.source === 'Promise.then' && task._state === 'scheduling') {
+      task.data.promiseInvokeStack = new Error('PromiseInvokeStack').stack;
+    }
+
+    /**
+     * add
+     * `chainPromise.__av_stack__ = new Error().stack;`
+     * to
+     * node_modules/zone.js/dist/zone-evergreen.js:975
+     */
     this._timeTravelArray.push({
       task: task,
-      stack: this.getFilteredStack(),
+      stack: this.getFilteredStack(task),
       state: StepEnum.schedule,
     });
 
@@ -57,7 +78,7 @@ export default class StoreTaskZoneSpec {
   ) {
     this._timeTravelArray.push({
       task: task,
-      stack: this.getFilteredStack(),
+      stack: this.getFilteredStack(task),
       runCount: task.runCount,
       state: StepEnum.invoke,
     });
@@ -67,11 +88,33 @@ export default class StoreTaskZoneSpec {
     parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
   }
 
-  getFilteredStack() {
+  onCancelTask(parentZoneDelegate, currentZone, targetZone, task) {
+    this._timeTravelArray.push({
+      task: task,
+      stack: this.getFilteredStack(task),
+      state: StepEnum.schedule,
+    });
+
+    this._onCancelTask(task);
+
+    parentZoneDelegate.cancelTask(targetZone, task);
+  }
+
+  getFilteredStack(task?: any) {
     // Chrome
     const whiteReg = /at eval \(eval at .*?, <anonymous>:\d+:\d+\)/;
-    const resultStack = new Error().stack;
-    const filteredStack = resultStack
+
+    let stack = task.data.__av_stack__;
+
+    if (task.source === 'Promise.then' && task._state === 'running') {
+      stack = task.data.promiseInvokeStack;
+    }
+
+    if (!stack) {
+      stack = this.getLongStackTrace(task);
+    }
+
+    const filteredStack = stack
       .split('\n')
       .slice(1)
       .filter((s) => whiteReg.test(s));
@@ -100,5 +143,14 @@ export default class StoreTaskZoneSpec {
 
   getTimeTravelArray() {
     return this._timeTravelArray;
+  }
+
+  private getLongStackTrace(task) {
+    var trace = [];
+    while (task) {
+      trace.push(task.data.LongStackTraceStack);
+      task = task.data.LongStackTraceParentTask;
+    }
+    return trace.join('\n');
   }
 }

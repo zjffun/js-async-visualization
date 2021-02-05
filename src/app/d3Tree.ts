@@ -6,6 +6,7 @@ const stepColorMap = {
   [StepEnum.scheduling]: 'yellow',
   [StepEnum.schedule]: 'yellow',
   [StepEnum.invoke]: 'green',
+  [StepEnum.cancel]: 'red',
 };
 
 function lastElement(arr) {
@@ -45,8 +46,8 @@ let nodeClickHandler;
 
 export function init(taskData: TaskNode, dom: HTMLElement, onNodeClick) {
   nodeClickHandler = onNodeClick;
-  viewerWidth = dom.clientWidth;
-  viewerHeight = dom.clientHeight;
+  viewerWidth = dom.clientWidth - 2;
+  viewerHeight = dom.clientHeight - 2;
 
   // Define the root
   root = taskData;
@@ -195,8 +196,8 @@ export function update() {
           .attr('stroke', 'aqua')
           .attr('d', function (d) {
             var o = {
-              x: d.x0,
-              y: d.y0,
+              x: d.source.x,
+              y: d.source.y,
             };
             return diagonal({
               source: o,
