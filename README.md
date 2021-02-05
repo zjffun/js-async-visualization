@@ -1,3 +1,8 @@
+TODO:
+
+- cancel task stack
+- Promise catch finally stack
+
 # AsyncVisualization3
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 10.0.5.
