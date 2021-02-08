@@ -1,6 +1,9 @@
 TODO:
 
-- cancel task stack
+- custom zone.js
+- detail info
+- state cursor bind
+- example
 - Promise catch finally stack
 
 # AsyncVisualization3

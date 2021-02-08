@@ -1,17 +1,28 @@
 /* You can add global styles to this file, and also import other style files */
-
+@import "sass-material-colors";
+@import "./assets/range-input.scss";
 @import "../node_modules/codemirror/lib/codemirror.css";
 @import "../node_modules/codemirror/theme/solarized.css";
 
 html,
 body,
 h1 {
-  padding: 0;
   margin: 0;
+  padding: 0;
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.spring {
+  flex: 1 1 0;
 }
 
 .gutter {
-  background: gray;
+  background: material-color("grey", "600");
   border-radius: 4px;
   &-horizontal {
     cursor: col-resize;

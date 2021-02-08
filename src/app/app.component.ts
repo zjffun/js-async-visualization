@@ -8,6 +8,8 @@ import 'codemirror/addon/selection/mark-selection.js';
 import StoreTaskZoneSpec from './StoreTaskZoneSpec';
 import { init, update } from './d3Tree';
 import { TimeTravel } from '.';
+import { ActivatedRoute } from '@angular/router';
+import examples from './examples';
 
 function visit(parent, visitFn, childrenFn) {
   if (!parent) return;
@@ -49,26 +51,81 @@ export class AppComponent {
   private taskTree;
   private locMark;
 
+  examples = examples;
+
+  currentExample = 0;
+
   currentState = -1;
 
   totalState = -1;
 
+  isRunning = false;
+
+  scheduling = 0;
+  invoking = 0;
+  canceling = 0;
+
+  //    constructor(public router: Router, logger: Logger) {
+  //   router.events.pipe(
+  //      filter((e: Event): e is RouterEvent => e instanceof RouterEvent)
+  //   ).subscribe((e: RouterEvent) => {
+  //     logger.log(e.id, e.url);
+  //   });
+  // }
+
+  constructor(private activatedRoute: ActivatedRoute) {
+    this.activatedRoute.queryParams.subscribe((params) => {
+      const example = params['example'];
+      if (example !== undefined) {
+        this.currentExample = +example;
+      }
+      if (this.codeMirror) {
+        this.initCodeMirrorValue();
+      }
+    });
+  }
+
+  initCodeMirrorValue() {
+    const code = examples[this.currentExample]?.code;
+    if (code !== undefined) {
+      this.codeMirror.setValue(code);
+
+      this.runCode();
+    }
+  }
+
   runCode() {
+    this.isRunning = true;
+    this.scheduling = 0;
+    this.invoking = 0;
+    this.canceling = 0;
     this.timeTravelArray = [];
 
     const that = this;
     const code = this.codeMirror.getValue();
     const func = new Function(code);
     try {
+      const defaultZone = Zone.current;
       Zone.current
         .fork(
           new StoreTaskZoneSpec({
             onScheduleTask() {
+              that.scheduling++;
               that.taskTree = this.getTaskTree(this.rootTask);
               that.timeTravelArray = this.getTimeTravelArray();
             },
-            onInvokeTask() {},
-            onCancelTask() {},
+            onInvokeTask() {
+              that.invoking++;
+            },
+            onCancelTask() {
+              that.canceling++;
+            },
+            onFinish() {
+              that.isRunning = false;
+              defaultZone.run(() => {
+                that.handleUpdateClick();
+              });
+            },
           })
         )
         .run(func);
@@ -79,6 +136,8 @@ export class AppComponent {
   }
 
   handleUpdateClick() {
+    this.currentState = -1;
+
     visit(
       this.taskTree,
       (d) => {
@@ -218,72 +277,8 @@ export class AppComponent {
     CodeMirrorStatusBar.classList.add('CodeMirror-StatusBar');
     CodeMirrorStatusBar.innerText = 'Ln -1, Col -1';
 
-    let code;
-    code = `// var a = Promise.race([Promise.resolve(123)]);
-var b = new Promise((res) => setTimeout(() => {
-  res();
-}, 1000));
-b.then(() => {});
-// a.then(() => {
-//   console.log(123);
-// });
-`;
-
-    // code = `
-    // class Scheduler {
-    //   constructor() {
-    //     this.count = 2;
-    //     this.queue = [];
-    //     this.run = [];
-    //   }
-    //   add(task) {
-    //     this.queue.push(task);
-    //     return this.scheduler();
-    //   }
-    //   scheduler() {
-    //     if (this.run.length < this.count && this.queue.length) {
-    //       const task = this.queue.shift();
-    //       const promise = task().then(() => {
-    //         this.run.splice(this.run.indexOf(promise), 1);
-    //       });
-    //       this.run.push(promise);
-    //       return promise;
-    //     } else {
-    //       return Promise.race(this.run).then((res) => {
-    //         return this.scheduler();
-    //       });
-    //     }
-    //   }
-    // }
-
-    // const scheduler = new Scheduler();
-    // const timeout = (time) => {
-    //   return new Promise((r) => setTimeout(r, time));
-    // };
-    // let i = 0;
-    // const addTask = (time, order) => {
-    //   scheduler
-    //     .add(() => {
-    //       return timeout(time);
-    //     })
-    //     .then(() => console.log(order));
-    // };
-
-    // // run
-    // addTask(1000, 1);
-    // addTask(500, 2);
-    // addTask(300, 3);
-    // addTask(800, 4);`;
-
-    //     code = `function myScript(){return 100;}
-
-    // setTimeout(()=>{setTimeout(()=>{setTimeout(()=>{}, 100)}, 100)}, 100)
-    // setTimeout(()=>{setTimeout(()=>{setTimeout(()=>{}, 100)}, 100)}, 100)
-    // console.log(11)
-    // throw Error(10)`;
-
     this.codeMirror = CodeMirror(this.code.nativeElement, {
-      value: code,
+      value: '',
       lineNumbers: true,
       mode: 'javascript',
       theme: 'solarized dark',
@@ -298,11 +293,5 @@ b.then(() => {});
       position: 'before-bottom',
       stable: true,
     });
-
-    // debug
-    this.runCode();
-    setTimeout(() => {
-      this.handleUpdateClick();
-    }, 3000);
   }
 }

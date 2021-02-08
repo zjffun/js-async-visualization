@@ -20,16 +20,13 @@ export default class StoreTaskZoneSpec {
   private _onInvokeTask;
   private _onCancelTask;
   private _timeTravelArray = [];
+  private _onFinish;
 
-  constructor({ onScheduleTask, onInvokeTask, onCancelTask }) {
+  constructor({ onScheduleTask, onInvokeTask, onCancelTask, onFinish }) {
     this._onScheduleTask = onScheduleTask;
     this._onInvokeTask = onInvokeTask;
     this._onCancelTask = onCancelTask;
-  }
-
-  onIntercept(parentZoneDelegate, currentZone, targetZone, delegate, source) {
-    console.log(parentZoneDelegate);
-    debugger;
+    this._onFinish = onFinish;
   }
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
@@ -92,7 +89,7 @@ export default class StoreTaskZoneSpec {
     this._timeTravelArray.push({
       task: task,
       stack: this.getFilteredStack(task),
-      state: StepEnum.schedule,
+      state: StepEnum.cancel,
     });
 
     this._onCancelTask(task);
@@ -100,14 +97,29 @@ export default class StoreTaskZoneSpec {
     parentZoneDelegate.cancelTask(targetZone, task);
   }
 
+  onHasTask(parentZoneDelegate, currentZone, targetZone, hasTaskState) {
+    parentZoneDelegate.hasTask(targetZone, hasTaskState);
+    if (
+      hasTaskState.eventTask === false &&
+      hasTaskState.macroTask === false &&
+      hasTaskState.microTask === false
+    ) {
+      this._onFinish();
+    }
+  }
+
   getFilteredStack(task?: any) {
     // Chrome
-    const whiteReg = /at eval \(eval at .*?, <anonymous>:\d+:\d+\)/;
+    const whiteReg = /at .*? \(eval at .*?, <anonymous>:\d+:\d+\)/;
 
     let stack = task.data.__av_stack__;
 
     if (task.source === 'Promise.then' && task._state === 'running') {
       stack = task.data.promiseInvokeStack;
+    }
+
+    if (task._state === 'canceling') {
+      stack = new Error().stack;
     }
 
     if (!stack) {
