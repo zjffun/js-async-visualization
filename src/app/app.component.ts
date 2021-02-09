@@ -1,4 +1,4 @@
-import { Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, ViewChild } from '@angular/core';
 import Split from 'split.js';
 import CodeMirror from 'codemirror';
 import 'codemirror/mode/javascript/javascript.js';
@@ -13,14 +13,16 @@ import examples from './examples';
 import { StateEnum } from './enum';
 
 function visit(parent, visitFn, childrenFn) {
-  if (!parent) return;
+  if (!parent) {
+    return;
+  }
 
   visitFn(parent);
 
-  var children = childrenFn(parent);
+  const children = childrenFn(parent);
   if (children) {
-    var count = children.length;
-    for (var i = 0; i < count; i++) {
+    const count = children.length;
+    for (let i = 0; i < count; i++) {
       visit(children[i], visitFn, childrenFn);
     }
   }
@@ -40,7 +42,7 @@ function getLoc(str: string) {
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements AfterViewInit {
   @ViewChild('codeWrapper') codeWrapper: ElementRef;
   @ViewChild('code') code: ElementRef;
   @ViewChild('result') result: ElementRef;
@@ -56,7 +58,7 @@ export class AppComponent {
 
   examples = examples;
 
-  currentExample = 0;
+  currentExample = -1;
 
   currentState = -1;
 
@@ -64,13 +66,13 @@ export class AppComponent {
 
   isRunning = false;
 
-  scheduling = 0;
-  invoking = 0;
-  canceling = 0;
+  scheduled = 0;
+  invoked = 0;
+  canceled = 0;
 
   constructor(private activatedRoute: ActivatedRoute) {
     this.activatedRoute.queryParams.subscribe((params) => {
-      const example = params['example'];
+      const example = params.example;
       if (example !== undefined) {
         this.currentExample = +example;
       }
@@ -91,9 +93,9 @@ export class AppComponent {
 
   runCode() {
     this.isRunning = true;
-    this.scheduling = 0;
-    this.invoking = 0;
-    this.canceling = 0;
+    this.scheduled = 0;
+    this.invoked = 0;
+    this.canceled = 0;
     this.timeTravelArray = [];
 
     const that = this;
@@ -105,15 +107,15 @@ export class AppComponent {
         .fork(
           new StoreTaskZoneSpec({
             onScheduleTask() {
-              that.scheduling++;
+              that.scheduled++;
               that.taskTree = this.getTaskTree(this.rootTask);
               that.timeTravelArray = this.getTimeTravelArray();
             },
             onInvokeTask() {
-              that.invoking++;
+              that.invoked++;
             },
             onCancelTask() {
-              that.canceling++;
+              that.canceled++;
             },
             onFinish() {
               that.isRunning = false;
@@ -253,13 +255,13 @@ export class AppComponent {
       sizes: [50, 50],
       dragInterval: 20,
       minSize: 0,
-      elementStyle: function (dimension, size, gutterSize) {
+      elementStyle(dimension, size, gutterSize) {
         return {
           flex: `0 0 auto`,
           width: `calc(${size}% - ${gutterSize}px)`,
         };
       },
-      gutterStyle: function (dimension, gutterSize) {
+      gutterStyle(dimension, gutterSize) {
         return {
           flex: `0 0 ${gutterSize}px`,
         };
@@ -271,13 +273,13 @@ export class AppComponent {
       dragInterval: 20,
       minSize: 0,
       direction: 'vertical',
-      elementStyle: function (dimension, size, gutterSize) {
+      elementStyle(dimension, size, gutterSize) {
         return {
           flex: `0 0 auto`,
           height: `calc(${size}% - ${gutterSize}px)`,
         };
       },
-      gutterStyle: function (dimension, gutterSize) {
+      gutterStyle(dimension, gutterSize) {
         return {
           flex: `0 0 ${gutterSize}px`,
         };

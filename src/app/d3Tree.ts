@@ -82,9 +82,9 @@ export function init(taskData: TaskNode, dom: HTMLElement, onNodeClick) {
   treeObj.x0 = treeObj.x;
   treeObj.y0 = treeObj.y;
   // // Stash the old positions for transition.
-  treeObj.eachBefore(function (d) {
+  treeObj.eachBefore((d) => {
     if (d.parent) {
-      let t: any = d;
+      const t: any = d;
       t.x0 = d.parent.x;
       t.y0 = d.parent.y;
     }
@@ -105,7 +105,7 @@ export function init(taskData: TaskNode, dom: HTMLElement, onNodeClick) {
     .style('height', viewerHeight)
     .call(zoomListener);
 
-  let gWrapper = baseSvg
+  const gWrapper = baseSvg
     .append('g')
     .attr('transform', 'translate(60, ' + viewerHeight / 2 + ') scale(1)');
 
@@ -114,8 +114,10 @@ export function init(taskData: TaskNode, dom: HTMLElement, onNodeClick) {
 
 export function update() {
   // Compute the new tree layout.
-  var nodes = treeObj.descendants().filter((n) => n.data.timeTravel.length > 0);
-  var links = treeObj
+  const nodes = treeObj
+    .descendants()
+    .filter((n) => n.data.timeTravel.length > 0);
+  const links = treeObj
     .links()
     .filter((n) => n.target.data.timeTravel.length > 0);
 
@@ -123,19 +125,27 @@ export function update() {
   right = root;
   top = root;
   bottom = root;
-  nodes.forEach((node) => {
-    if (node.x < left.x) left = node;
-    if (node.x > right.x) right = node;
-    if (node.y < bottom.y) bottom = node;
-    if (node.y > top.y) top = node;
+  nodes.forEach((n) => {
+    if (n.x < left.x) {
+      left = n;
+    }
+    if (n.x > right.x) {
+      right = n;
+    }
+    if (n.y < bottom.y) {
+      bottom = n;
+    }
+    if (n.y > top.y) {
+      top = n;
+    }
   });
 
   const circleR = 8;
 
   // Update the nodes…
-  var node = svgGroup
+  const node = svgGroup
     .selectAll('g.node')
-    .data(nodes, function (d) {
+    .data(nodes, (d) => {
       return d.id || (d.id = ++i);
     })
     .join(
@@ -143,7 +153,7 @@ export function update() {
         enter
           .append('g')
           .attr('class', 'node')
-          .attr('transform', function (d) {
+          .attr('transform', (d) => {
             return 'translate(' + d.y0 + ',' + d.x0 + ')';
           })
           .call((enter) =>
@@ -152,7 +162,7 @@ export function update() {
               .attr('class', 'nodeCircle')
               .attr('r', circleR)
               .style('fill', getFillColor)
-              .on('click', function (e, d) {
+              .on('click', (e, d) => {
                 e.stopPropagation();
                 nodeClickHandler(d.data);
               })
@@ -163,11 +173,11 @@ export function update() {
               .attr('dy', '.35em')
               .attr('class', 'nodeText nodeText--id')
               .attr('text-anchor', 'middle')
-              .text(function (d) {
+              .text((d) => {
                 return d.data.id;
               })
               .style('fill-opacity', 1)
-              .on('click', function (e, d) {
+              .on('click', (e, d) => {
                 e.stopPropagation();
                 nodeClickHandler(d.data);
               })
@@ -175,19 +185,19 @@ export function update() {
           .call((enter) =>
             enter
               .append('text')
-              .attr('x', function (d) {
+              .attr('x', (d) => {
                 return d.children || d._children ? -10 : 10;
               })
               .attr('dy', '.35em')
               .attr('class', 'nodeText')
-              .attr('text-anchor', function (d) {
+              .attr('text-anchor', (d) => {
                 return d.children || d._children ? 'end' : 'start';
               })
-              .text(function (d) {
+              .text((d) => {
                 return getSortName(d.data.name);
               })
               .style('fill-opacity', 1)
-              .on('click', function (e, d) {
+              .on('click', (e, d) => {
                 e.stopPropagation();
                 nodeClickHandler(d.data);
               })
@@ -200,7 +210,7 @@ export function update() {
             enter
               .transition()
               .duration(duration)
-              .attr('transform', function (d) {
+              .attr('transform', (d) => {
                 return 'translate(' + d.y + ',' + d.x + ')';
               })
           ),
@@ -219,7 +229,7 @@ export function update() {
             exit
               .transition()
               .duration(duration)
-              .attr('transform', function (d) {
+              .attr('transform', (d) => {
                 return 'translate(' + d.y0 + ',' + d.x0 + ')';
               })
               .remove()
@@ -230,9 +240,9 @@ export function update() {
     );
 
   // Update the links…
-  var link = svgGroup
+  const link = svgGroup
     .selectAll('path.link')
-    .data(links, function (d) {
+    .data(links, (d) => {
       return d.target.id;
     })
     .join(
@@ -240,8 +250,8 @@ export function update() {
         enter
           .insert('path', 'g')
           .attr('class', 'link')
-          .attr('d', function (d) {
-            var o = {
+          .attr('d', (d) => {
+            const o = {
               x: d.source.x,
               y: d.source.y,
             };
@@ -258,8 +268,8 @@ export function update() {
         exit
           .transition()
           .duration(duration)
-          .attr('d', function (d) {
-            var o = {
+          .attr('d', (d) => {
+            const o = {
               x: d.source.x,
               y: d.source.y,
             };

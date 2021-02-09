@@ -29,8 +29,8 @@ export default class StoreTaskZoneSpec {
     this._onFinish = onFinish;
   }
 
-  onScheduleTask(parentZoneDelegate, currentZone, targetZone, task) {
-    var task = parentZoneDelegate.scheduleTask(targetZone, task);
+  onScheduleTask(parentZoneDelegate, currentZone, targetZone, taskParam) {
+    const task = parentZoneDelegate.scheduleTask(targetZone, taskParam);
     task.data.id = this.id++;
     task.data._inSchedule = true;
     task.data.LongStackTraceStack = new Error('LongStackTrace').stack;
@@ -62,7 +62,7 @@ export default class StoreTaskZoneSpec {
      * node_modules/zone.js/dist/zone-evergreen.js:995
      */
     this._timeTravelArray.push({
-      task: task,
+      task,
       stack: this.getFilteredStack(task),
       state: StateEnum.scheduled,
     });
@@ -79,7 +79,7 @@ export default class StoreTaskZoneSpec {
     applyArgs
   ) {
     this._timeTravelArray.push({
-      task: task,
+      task,
       stack: this.getFilteredStack(task),
       runCount: task.runCount,
       state: StateEnum.invoked,
@@ -92,7 +92,7 @@ export default class StoreTaskZoneSpec {
 
   onCancelTask(parentZoneDelegate, currentZone, targetZone, task) {
     this._timeTravelArray.push({
-      task: task,
+      task,
       stack: this.getFilteredStack(task),
       state: StateEnum.canceled,
     });
@@ -163,7 +163,7 @@ export default class StoreTaskZoneSpec {
   }
 
   private getLongStackTrace(task) {
-    var trace = [];
+    const trace = [];
     while (task) {
       trace.push(task.data.LongStackTraceStack);
       task = task.data.LongStackTraceParentTask;

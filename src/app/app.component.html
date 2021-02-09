@@ -22,13 +22,14 @@
         (click)="runCode()"
         class="code-run"
         [class]="{ 'code-run--running': isRunning }"
+        title="scheduled / invoked/ canceled"
       >
         <span> {{ isRunning ? "running" : "run" }} </span>
-        <span>{{ scheduling }}</span>
+        <span>{{ scheduled }}</span>
         /
-        <span>{{ invoking }}</span>
+        <span>{{ invoked }}</span>
         /
-        <span>{{ canceling }}</span>
+        <span>{{ canceled }}</span>
       </button>
       <ul class="examples">
         <li
