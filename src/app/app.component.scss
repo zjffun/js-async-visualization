@@ -152,8 +152,22 @@ $input-height: 20px;
         height: calc(100% - #{$menu-height});
         box-shadow: inset 0 7px 12px -12px #000;
         ::ng-deep {
-          .nodeText {
-            fill: #ccc;
+          .node {
+            &Circle {
+              cursor: pointer;
+            }
+            &Text {
+              font-size: 12px;
+              fill: #ccc;
+              cursor: pointer;
+              &--id {
+                fill: $background-color;
+              }
+            }
+          }
+          .link {
+            stroke: #ccc;
+            cursor: pointer;
           }
         }
       }

@@ -1,12 +1,15 @@
 import { tree, linkVertical, select, hierarchy, zoom } from 'd3';
-import { StepEnum } from './enum';
+import { StateEnum } from './enum';
 import { TaskNode } from './index.d';
 
 const stepColorMap = {
-  [StepEnum.scheduling]: 'yellow',
-  [StepEnum.schedule]: 'yellow',
-  [StepEnum.invoke]: 'green',
-  [StepEnum.cancel]: 'red',
+  [StateEnum.scheduled]: '#fff176',
+  [StateEnum.invoked]: '#81c784',
+  [StateEnum.canceled]: '#e57373',
+};
+
+const sortNameMap = {
+  requestAnimationFrame: 'rAF',
 };
 
 function lastElement(arr) {
@@ -20,6 +23,28 @@ function getFillColor(d) {
   return stepColorMap[lastElement(d.data.timeTravel).state];
 }
 
+const promiseReg = /^Promise\./;
+const eventReg = /.*?\.addEventListener:/;
+
+function getSortName(name: string) {
+  if (name.length < 11) {
+    return name;
+  }
+  if (sortNameMap[name]) {
+    return sortNameMap[name];
+  }
+
+  if (promiseReg.test(name)) {
+    return name.replace(promiseReg, 'P.');
+  }
+
+  if (eventReg.test(name)) {
+    return name.replace(eventReg, 'event:');
+  }
+
+  return name.slice(name.length - 10);
+}
+
 let root: TaskNode;
 let viewerWidth;
 let viewerHeight;
@@ -28,7 +53,7 @@ let i = 0;
 
 const duration = 750;
 
-const treeFn = tree<any>().nodeSize([12, 120]);
+const treeFn = tree<any>().nodeSize([22, 120]);
 
 const diagonal = linkVertical<any, any>()
   .x((d) => d.y)
@@ -51,9 +76,6 @@ export function init(taskData: TaskNode, dom: HTMLElement, onNodeClick) {
 
   // Define the root
   root = taskData;
-  root.timeTravel.push({
-    state: StepEnum.invoke,
-  });
 
   // tree
   treeObj = treeFn(hierarchy(root));
@@ -108,6 +130,8 @@ export function update() {
     if (node.y > top.y) top = node;
   });
 
+  const circleR = 8;
+
   // Update the nodes…
   var node = svgGroup
     .selectAll('g.node')
@@ -126,8 +150,27 @@ export function update() {
             enter
               .append('circle')
               .attr('class', 'nodeCircle')
-              .attr('r', 4.5)
+              .attr('r', circleR)
               .style('fill', getFillColor)
+              .on('click', function (e, d) {
+                e.stopPropagation();
+                nodeClickHandler(d.data);
+              })
+          )
+          .call((enter) =>
+            enter
+              .append('text')
+              .attr('dy', '.35em')
+              .attr('class', 'nodeText nodeText--id')
+              .attr('text-anchor', 'middle')
+              .text(function (d) {
+                return d.data.id;
+              })
+              .style('fill-opacity', 1)
+              .on('click', function (e, d) {
+                e.stopPropagation();
+                nodeClickHandler(d.data);
+              })
           )
           .call((enter) =>
             enter
@@ -141,12 +184,16 @@ export function update() {
                 return d.children || d._children ? 'end' : 'start';
               })
               .text(function (d) {
-                return [d.data.name].join('\n');
+                return getSortName(d.data.name);
               })
               .style('fill-opacity', 1)
               .on('click', function (e, d) {
                 e.stopPropagation();
-                nodeClickHandler(d);
+                nodeClickHandler(d.data);
+              })
+              .append('title')
+              .text((d) => {
+                return d.data.name;
               })
           )
           .call((enter) =>
@@ -163,7 +210,7 @@ export function update() {
           .call((update) =>
             update
               .select('circle.nodeCircle')
-              .attr('r', 4.5)
+              .attr('r', circleR)
               .style('fill', getFillColor)
           ),
       (exit) => {
@@ -193,7 +240,6 @@ export function update() {
         enter
           .insert('path', 'g')
           .attr('class', 'link')
-          .attr('stroke', 'aqua')
           .attr('d', function (d) {
             var o = {
               x: d.source.x,

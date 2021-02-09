@@ -10,6 +10,7 @@ import { init, update } from './d3Tree';
 import { TimeTravel } from '.';
 import { ActivatedRoute } from '@angular/router';
 import examples from './examples';
+import { StateEnum } from './enum';
 
 function visit(parent, visitFn, childrenFn) {
   if (!parent) return;
@@ -51,6 +52,8 @@ export class AppComponent {
   private taskTree;
   private locMark;
 
+  nodeDetail = '';
+
   examples = examples;
 
   currentExample = 0;
@@ -64,14 +67,6 @@ export class AppComponent {
   scheduling = 0;
   invoking = 0;
   canceling = 0;
-
-  //    constructor(public router: Router, logger: Logger) {
-  //   router.events.pipe(
-  //      filter((e: Event): e is RouterEvent => e instanceof RouterEvent)
-  //   ).subscribe((e: RouterEvent) => {
-  //     logger.log(e.id, e.url);
-  //   });
-  // }
 
   constructor(private activatedRoute: ActivatedRoute) {
     this.activatedRoute.queryParams.subscribe((params) => {
@@ -137,6 +132,7 @@ export class AppComponent {
 
   handleUpdateClick() {
     this.currentState = -1;
+    this.locMark?.clear();
 
     visit(
       this.taskTree,
@@ -151,6 +147,14 @@ export class AppComponent {
       ttd.node = ttd.task.data.node;
     });
 
+    this.timeTravelArray[-1] = {
+      state: StateEnum.invoked,
+      node: this.taskTree,
+      stack: [],
+    };
+
+    this.taskTree.timeTravel.push(this.timeTravelArray[-1]);
+
     this.totalState = this.timeTravelArray.length - 1;
 
     this.tree.nativeElement.querySelector('#tree-container').innerHTML = '';
@@ -160,6 +164,8 @@ export class AppComponent {
       this.handleNodeClick.bind(this)
     );
     this.updateTree();
+    this.handleNodeClick(this.taskTree);
+    this.setLocMark(this.timeTravelArray[-1]);
   }
 
   updateTree() {
@@ -181,9 +187,7 @@ export class AppComponent {
   }
 
   handleNodeClick(data) {
-    (document.querySelector(
-      '.info-container pre'
-    ) as HTMLElement).innerText = JSON.stringify(
+    this.nodeDetail = JSON.stringify(
       data,
       (k, v) => {
         if (['parent', 'children', 'task', 'node'].includes(k)) {
@@ -193,10 +197,12 @@ export class AppComponent {
       },
       2
     );
-    this.setLocMark(data.data.timeTravel[data.data.timeTravel.length - 1]);
+    this.setLocMark(data.timeTravel[data.timeTravel.length - 1]);
   }
 
   setLocMark(timeTravelData?: TimeTravel) {
+    this.locMark?.clear();
+
     const stackFrame = timeTravelData?.stack?.[0];
     if (stackFrame) {
       const { line, ch } = getLoc(stackFrame);
@@ -206,6 +212,13 @@ export class AppComponent {
         { line, ch: ch + 1 },
         { className: 'CodeMirror-CurrentLoc' }
       );
+
+      // set cursor
+      this.codeMirror.focus();
+      this.codeMirror.setCursor({
+        line,
+        ch,
+      });
     }
   }
 
@@ -217,10 +230,10 @@ export class AppComponent {
     this.currentState--;
     ttd.node.timeTravel.pop();
     this.updateTree();
-    this.handleNodeClick({
-      data: ttd.node,
-    });
-    this.setLocMark(this.timeTravelArray[this.currentState]);
+
+    const currentTtd = this.timeTravelArray[this.currentState];
+    this.handleNodeClick(currentTtd.node);
+    this.setLocMark(currentTtd);
   }
 
   nextState() {
@@ -231,9 +244,7 @@ export class AppComponent {
     const ttd = this.timeTravelArray[this.currentState];
     ttd.node.timeTravel.push(ttd);
     this.updateTree();
-    this.handleNodeClick({
-      data: ttd.node,
-    });
+    this.handleNodeClick(ttd.node);
     this.setLocMark(ttd);
   }
 

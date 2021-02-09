@@ -1,4 +1,4 @@
-import { StepEnum } from './enum';
+import { StateEnum } from './enum';
 
 export interface TaskNode {
   id: string;
@@ -46,6 +46,10 @@ export default class StoreTaskZoneSpec {
       Zone.currentTask.data.children.push(task);
     }
 
+    /**
+     * promise source is only 'Promise.then'
+     * see: node_modules/zone.js/dist/zone-evergreen.js:697
+     */
     if (task.source === 'Promise.then' && task._state === 'scheduling') {
       task.data.promiseInvokeStack = new Error('PromiseInvokeStack').stack;
     }
@@ -55,11 +59,12 @@ export default class StoreTaskZoneSpec {
      * `chainPromise.__av_stack__ = new Error().stack;`
      * to
      * node_modules/zone.js/dist/zone-evergreen.js:975
+     * node_modules/zone.js/dist/zone-evergreen.js:995
      */
     this._timeTravelArray.push({
       task: task,
       stack: this.getFilteredStack(task),
-      state: StepEnum.schedule,
+      state: StateEnum.scheduled,
     });
 
     this._onScheduleTask(task);
@@ -77,7 +82,7 @@ export default class StoreTaskZoneSpec {
       task: task,
       stack: this.getFilteredStack(task),
       runCount: task.runCount,
-      state: StepEnum.invoke,
+      state: StateEnum.invoked,
     });
 
     this._onInvokeTask(task);
@@ -89,7 +94,7 @@ export default class StoreTaskZoneSpec {
     this._timeTravelArray.push({
       task: task,
       stack: this.getFilteredStack(task),
-      state: StepEnum.cancel,
+      state: StateEnum.canceled,
     });
 
     this._onCancelTask(task);

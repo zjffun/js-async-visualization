@@ -1,4 +1,4 @@
-import { StepEnum } from './enum';
+import { StateEnum } from './enum';
 import { TaskNode as StoreTaskNode } from './StoreTaskZoneSpec';
 
 export interface TaskNode extends StoreTaskNode {
@@ -10,7 +10,7 @@ export interface TaskNode extends StoreTaskNode {
 }
 
 export interface TimeTravel {
-  state: StepEnum;
+  state: StateEnum;
   task?: any;
   stack?: string[];
   runCount?: number;
