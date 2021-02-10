@@ -1,3 +1,4 @@
+import { TimeTravel } from './index.d';
 import { StateEnum } from './enum';
 
 export interface TaskNode {
@@ -8,6 +9,7 @@ export interface TaskNode {
 }
 export default class StoreTaskZoneSpec {
   name = 'StoreTaskZoneSpec';
+
   rootTask = {
     source: 'root',
     data: {
@@ -15,11 +17,12 @@ export default class StoreTaskZoneSpec {
       children: [],
     },
   };
-  id = 1;
+
+  private _id = 1;
   private _onScheduleTask;
   private _onInvokeTask;
   private _onCancelTask;
-  private _timeTravelArray = [];
+  private _timeTravelArray: TimeTravel[] = [];
   private _onFinish;
 
   constructor({ onScheduleTask, onInvokeTask, onCancelTask, onFinish }) {
@@ -31,11 +34,11 @@ export default class StoreTaskZoneSpec {
 
   onScheduleTask(parentZoneDelegate, currentZone, targetZone, taskParam) {
     const task = parentZoneDelegate.scheduleTask(targetZone, taskParam);
-    task.data.id = this.id++;
-    task.data._inSchedule = true;
-    task.data.LongStackTraceStack = new Error('LongStackTrace').stack;
+    task.data.id = this._id++;
+    task.data._STZ_inStoreTaskZone = true;
+    task.data._STZ_longStackTrace = new Error('STZ_longStackTrace').stack;
 
-    if (!Zone.currentTask || !Zone.currentTask.data._inSchedule) {
+    if (!Zone.currentTask || !Zone.currentTask.data._STZ_inStoreTaskZone) {
       task.data.parent = this.rootTask;
       this.rootTask.data.children.push(task);
     } else {
@@ -51,12 +54,14 @@ export default class StoreTaskZoneSpec {
      * see: node_modules/zone.js/dist/zone-evergreen.js:697
      */
     if (task.source === 'Promise.then' && task._state === 'scheduling') {
-      task.data.promiseInvokeStack = new Error('PromiseInvokeStack').stack;
+      task.data._STZ_promiseInvokeStack = new Error(
+        'STZ_promiseInvokeStack'
+      ).stack;
     }
 
     /**
      * add
-     * `chainPromise.__av_stack__ = new Error().stack;`
+     * `chainPromise._JAV_promiseStack = new Error().stack;`
      * to
      * node_modules/zone.js/dist/zone-evergreen.js:975
      * node_modules/zone.js/dist/zone-evergreen.js:995
@@ -117,10 +122,10 @@ export default class StoreTaskZoneSpec {
     // Chrome
     const whiteReg = /at .*? \(eval at .*?, <anonymous>:\d+:\d+\)/;
 
-    let stack = task.data.__av_stack__;
+    let stack = task.data._JAV_promiseStack;
 
     if (task.source === 'Promise.then' && task._state === 'running') {
-      stack = task.data.promiseInvokeStack;
+      stack = task.data._STZ_promiseInvokeStack;
     }
 
     if (task._state === 'canceling') {
@@ -139,13 +144,13 @@ export default class StoreTaskZoneSpec {
     return filteredStack;
   }
 
-  getTaskTree(task) {
-    const result = {
+  getTaskTree(task): TaskNode {
+    const result: TaskNode = {
       id: task.data.id,
       name: task.source,
       task,
       children: [],
-    } as TaskNode;
+    };
 
     task.data.node = result;
 
@@ -165,7 +170,7 @@ export default class StoreTaskZoneSpec {
   private getLongStackTrace(task) {
     const trace = [];
     while (task) {
-      trace.push(task.data.LongStackTraceStack);
+      trace.push(task.data._STZ_longStackTrace);
       task = task.data.LongStackTraceParentTask;
     }
     return trace.join('\n');

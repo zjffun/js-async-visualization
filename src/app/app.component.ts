@@ -144,7 +144,7 @@ export class AppComponent implements AfterViewInit {
       (d) => d.children
     );
 
-    // TODO optimize
+    // TODO: optimize
     this.timeTravelArray.forEach((ttd) => {
       ttd.node = ttd.task.data.node;
     });
@@ -176,7 +176,6 @@ export class AppComponent implements AfterViewInit {
 
   handleChangeState(e) {
     const targetState = +e.target.value;
-    console.log(e);
     if (this.currentState > targetState) {
       while (this.currentState > targetState) {
         this.prevState();
