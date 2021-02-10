@@ -1,13 +1,16 @@
 {
-  "name": "async-visualization3",
-  "version": "0.0.0",
+  "name": "js-asynchronous-visualization",
+  "version": "0.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --prod --base-href https://zjffun.github.io/js-async-visualization/",
+    "build:prod": "rm -rf dist && npm run build && cp dist/index.html dist/404.html",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "deploy:github": "gh-pages -d dist -o github",
+    "deploy": "npm run build:prod && npm run deploy:github"
   },
   "private": true,
   "dependencies": {
@@ -36,6 +39,7 @@
     "@types/jasminewd2": "~2.0.3",
     "@types/node": "^12.11.1",
     "codelyzer": "^6.0.0",
+    "gh-pages": "^3.1.0",
     "jasmine-core": "~3.5.0",
     "jasmine-spec-reporter": "~5.0.0",
     "karma": "~5.0.0",

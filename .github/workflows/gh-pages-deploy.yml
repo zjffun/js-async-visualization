@@ -1,0 +1,29 @@
+name: gh pages deploy CI
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Install Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "10.x"
+      - name: Install npm dependencies
+        run: npm install
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+      - name: Config Git
+        run: |
+          git remote add github git@github.com:zjffun/js-async-visualization.git
+          git config --global user.email "zjffun@gmail.com"
+          git config --global user.name "JuFeng Zhang"
+      - name: Run deploy task
+        run: npm run deploy
