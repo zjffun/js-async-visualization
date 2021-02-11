@@ -1,0 +1,182 @@
+@import "sass-material-colors";
+
+:host {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 14px;
+  color: #ccc;
+  box-sizing: border-box;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+$primary-color: material-color("purple", "300");
+
+$secondary-color: material-color("purple", "300");
+
+$surface-color: material-color("purple", "300");
+
+$background-color: #002b36;
+
+$error-color: material-color("red", "300");
+
+$header-height: 50px;
+
+$input-height: 20px;
+
+.header {
+  height: $header-height;
+  color: material-color("grey", "900");
+  background: material-color("grey", "600");
+  display: flex;
+  align-items: center;
+  h1 {
+    padding: 0 8px;
+    font-size: 2em;
+  }
+  .github {
+    padding: 0 8px;
+    width: 24px;
+    height: 24px;
+    svg {
+      fill: material-color("grey", "900");
+    }
+  }
+}
+
+.container {
+  height: calc(100vh - 50px);
+  display: flex;
+  background: $background-color;
+  $menu-height: 26px;
+
+  button {
+    margin: 0 2px 0 0;
+    height: $input-height;
+    line-height: $input-height;
+    padding: 0 6px;
+    border: none;
+    outline: none;
+    color: #fff;
+    background: $primary-color;
+    cursor: pointer;
+    &:hover,
+    &:active {
+      background: material-color("purple", "600");
+    }
+  }
+
+  .code-wrapper {
+    position: relative;
+    overflow: hidden;
+    .code-menu {
+      height: $menu-height;
+      line-height: $menu-height;
+      padding: 0 2px;
+      .examples {
+        display: inline-flex;
+        align-self: flex-end;
+        & > li {
+          padding-left: 4px;
+          &.active {
+            a {
+              color: material-color("purple", "100");
+            }
+          }
+          a {
+            color: $primary-color;
+          }
+        }
+      }
+      .code-run {
+        &--running {
+          animation: running-blink 2s step-end infinite;
+          @keyframes running-blink {
+            80% {
+              opacity: 0;
+            }
+          }
+        }
+      }
+    }
+    .code {
+      $status-bar-height: 20px;
+      ::ng-deep .CodeMirror {
+        height: calc(
+          100vh - #{$header-height + $status-bar-height + $menu-height}
+        );
+        &-StatusBar {
+          padding-right: 6px;
+          height: $status-bar-height;
+          text-align: right;
+          color: $primary-color;
+        }
+        &-CurrentLoc {
+          background: $primary-color;
+          animation: blink 2s step-end infinite;
+          @keyframes blink {
+            50% {
+              background: transparent;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .result {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    .tree {
+      position: relative;
+      .timetravel {
+        height: $menu-height;
+        line-height: $menu-height;
+        padding: 0 2px;
+        > button {
+          vertical-align: text-top;
+        }
+        .state-range {
+          margin: 0;
+          width: 200px;
+          height: $input-height;
+          vertical-align: text-top;
+        }
+        .current-state {
+          margin-left: 4px;
+        }
+      }
+      #tree-container {
+        height: calc(100% - #{$menu-height});
+        box-shadow: inset 0 7px 12px -12px #000;
+        ::ng-deep {
+          .node {
+            &Circle {
+              cursor: pointer;
+            }
+            &Text {
+              font-size: 12px;
+              fill: #ccc;
+              cursor: pointer;
+              &--id {
+                fill: $background-color;
+              }
+            }
+          }
+          .link {
+            stroke: #ccc;
+            cursor: pointer;
+          }
+        }
+      }
+    }
+    .detail {
+      .info-container {
+        height: 100%;
+        overflow: auto;
+      }
+    }
+  }
+}
