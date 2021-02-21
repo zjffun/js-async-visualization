@@ -1,5 +1,6 @@
 import { TimeTravel } from './index.d';
 import { StateEnum } from './enum';
+import config from './config';
 
 export interface TaskNode {
   id: string;
@@ -119,9 +120,6 @@ export default class StoreTaskZoneSpec {
   }
 
   getFilteredStack(task?: any) {
-    // Chrome
-    const whiteReg = /at .*? \(eval at .*?, <anonymous>:\d+:\d+\)/;
-
     let stack = task.data._JAV_promiseStack;
 
     if (task.source === 'Promise.then' && task._state === 'running') {
@@ -136,10 +134,13 @@ export default class StoreTaskZoneSpec {
       stack = this.getLongStackTrace(task);
     }
 
-    const filteredStack = stack
-      .split('\n')
-      .slice(1)
-      .filter((s) => whiteReg.test(s));
+    let filteredStack = stack.split('\n').slice(1);
+
+    if (config.filterStackWhiteReg) {
+      filteredStack = filteredStack.filter((s) =>
+        config.filterStackWhiteReg.test(s)
+      );
+    }
 
     return filteredStack;
   }

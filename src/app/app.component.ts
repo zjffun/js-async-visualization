@@ -11,6 +11,7 @@ import { TimeTravel } from '.';
 import { ActivatedRoute } from '@angular/router';
 import examples from './examples';
 import { StateEnum } from './enum';
+import config from './config';
 
 function visit(parent, visitFn, childrenFn) {
   if (!parent) {
@@ -29,8 +30,14 @@ function visit(parent, visitFn, childrenFn) {
 }
 
 function getLoc(str: string) {
-  const locReg = /<anonymous>:(\d+):(\d+)/;
-  const res = str.match(locReg);
+  if (!str || !config.getLocReg) {
+    return {
+      line: 0,
+      ch: 0,
+    };
+  }
+
+  const res = str.match(config.getLocReg);
   return {
     line: +res[1] - 3,
     ch: +res[2] - 1,

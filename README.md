@@ -2,7 +2,7 @@
 
 An online tool for visualizing JS asynchronous tasks based on [zone.js](https://github.com/angular/angular/tree/master/packages/zone.js).
 
-- Only support Chrome currently.
+- Support Chrome, Firefox, Edge and Opera currently.
 
 <a href="https://zjffun.github.io/js-async-visualization/?example=0">
   <img src="https://github.com/zjffun/js-async-visualization/raw/main/example0.png">
